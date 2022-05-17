@@ -1,5 +1,7 @@
 #include <iostream>
 #include <cmath>
+#include <vector>
+#include <memory>
 using namespace std;
 class Complex {
     float im, re;
@@ -8,12 +10,12 @@ public:
         this -> im = im;
         this -> re = re;
     }
+
     Complex(Complex &nr){
         re = nr.re;
         im = nr.im;
     }
 
-//Getter si setter pentru partea reala (generate de clion)
     float getRe() const {
         return re;
     }
@@ -22,7 +24,6 @@ public:
         re = real;
     }
 
-//Getter si setter pentru partea imaginara (generate de clion)
     float getIm() const {
         return im;
     }
@@ -30,14 +31,12 @@ public:
         im = imaginar;
     }
 
-//Suprascriere >> si <<
     friend istream& operator>>(istream &is, Complex &nr) {
         cout<<"Introdu partea reala: ";
         is >> nr.re;
-        cout<<endl;
-        cout<<"Introdu partea imaginara: ";
+        cout << "Introdu partea imaginara: ";
         is >> nr.im;
-        cout<<endl;
+        cout << endl;
         return is;
     }
     friend ostream& operator<<(ostream &os, Complex &nr) {
@@ -46,7 +45,7 @@ public:
             os << nr.im <<"i";
         else if(nr.im > 0)
             os << "+" << nr.im << "i";
-        cout<<endl;
+        cout << " ";
         return os;
     }
     void afisare() {
@@ -56,7 +55,6 @@ public:
         cin >> *this;
     }
 
-//Metoda pentru calculul modulului nr complex
     float modul_complex () const {
         float modul;
         modul = sqrtf(im * im + re * re);
@@ -72,7 +70,6 @@ public:
         return suma;
     }
 
-//Suprascriere == si != (Generate de Clion)
     bool operator==(const Complex &rhs) const {
         return im == rhs.im &&
                re == rhs.re;
@@ -88,150 +85,204 @@ public:
         return b;
     }
 };
-//
+
 class Matrice {
 protected:
-    float **v;
-    int l, c;
+    Complex **v;
 public:
-//Constructor parametrizat (valoare default 0, pentru cazul in care nu sunt introduse alte valori
-    Matrice(int l = 0, int c = 0) {
-            v = new float*[l];
-            for(int i = 0; i < l; i++) {
-                v[i] = new float[c];
-            }
-            this -> l = l;
-            this -> c = c;
+    explicit Matrice(int nrl = 0, int nrc = 0) {
+        v = new Complex *[nrl];
+        for (int i = 0; i < nrl; i++) {
+            v[i] = new Complex[nrc];
+        }
     }
-
-//Destructor
-    ~Matrice (){
-        for(int i = 0; i < l; i++)
-            delete[] v[i];
+    ~Matrice() {
         delete[] v;
     }
+    virtual void citire() = 0;
+    virtual void afisare() = 0;
+};
 
-//Suprascriere operatori << si >>
-    friend ostream &operator<<(ostream &os, const Matrice &M) {
-        for(int i = 0; i < M.l; i++) {
-            for (int j = 0; j < M.c; j++)
-                os << M.v[i][j] << " ";
-            os << endl;
+class Matrice_Oarecare: public Matrice {
+    int nrl, nrc;
+public:
+    explicit Matrice_Oarecare(int nrl = 0, int nrc = 0):Matrice(nrl, nrc) {this -> nrl = nrl; this -> nrc = nrc;};
+    Matrice_Oarecare(Matrice_Oarecare &MO) {
+        this -> nrl = MO.nrl;
+        this -> nrc = MO.nrc;
+        this -> v = new Complex*[this -> nrl];
+        for (int i = 0; i < this -> nrl; i++){
+            v[i] = new Complex[this -> nrc];
+            for (int j = 0; j < this -> nrc; j++)
+                this -> v[i][j] = MO.v[i][j];
         }
-        return os;
     }
-    friend istream& operator>>(istream &is, Matrice &M){
-        cout << endl << "Introduceti elementele: ";
-        for(int i = 0; i < M.l; i++) {
-            for (int j = 0; j < M.c; j++)
-            {
-                Complex nr;
-                cin >> nr;
-                M.v[i][j] = nr.modul_complex();
-            }
+    ~Matrice_Oarecare() {
+        for (int i = 0; i < nrl; i++) {
+            delete[] v[i];
         }
+    }
+    void citire() override {
+        for (int i = 0; i < this -> nrl; i++)
+            for (int j = 0; j < this -> nrc; j++) {
+                cin >> v[i][j];
+            }
+
+    }
+    void afisare() override {
+        for (int i = 0; i < this -> nrl; i++) {
+            for (int j = 0; j < this -> nrc; j++)
+                cout << this -> v[i][j];
+            cout << "\n";
+        }
+    }
+    friend istream& operator>>(istream &is, Matrice_Oarecare &MO) {
+        MO.citire();
         return is;
     }
-
-    void afisare() const {
-        cout << *this;
+    friend ostream& operator<<(ostream &os, Matrice_Oarecare &MO) {
+        MO.afisare();
+        return os;
     }
-
-    void citire() {
-        cin >> *this;
-    }
-//Getter si setter
-    float getElement(int i, int j) {
+    Complex getElement(int i, int j) {
         return v[i][j];
     }
-    void setElement(int i, int j, float valoare) {
-        v[i][j] = valoare;
+    Matrice_Oarecare& operator=(const Matrice_Oarecare &MO) {
+        if(this -> nrl != 0 || this -> nrc != 0) {
+            for (int i = 0; i < this -> nrl; i++)
+                delete[] this -> v[i];
+            delete[] this -> v;
+        }
+        this -> nrl = MO.nrl;
+        this -> nrc = MO.nrc;
+        this -> v = new Complex*[MO.nrl];
+        for (int i = 0; i <  MO.nrl; i++) {
+            this -> v[i] = new Complex[MO.nrc];
+        }
+        for (int i = 0; i < MO.nrl; i++) {
+            for (int j = 0; j < MO.nrc; j++)
+                this -> v[i][j] = MO.v[i][j];
+        }
     }
 };
-//
-class Matrice_Patratica:public Matrice {
-    int d;
+
+class Matrice_Patratica: public Matrice {
+    int dim;
 public:
-    Matrice_Patratica(int d = 0):Matrice(d,d) {this -> d = d;}
+    explicit Matrice_Patratica(int dim = 0):Matrice(dim, dim) {this -> dim = dim;};
+    Matrice_Patratica(Matrice_Patratica &MP) {
+        this -> dim = MP.dim;
+        this -> v = new Complex*[this -> dim];
+        for (int i = 0; i < this -> dim; i++){
+            v[i] = new Complex[this -> dim];
+            for (int j = 0; j < this -> dim; j++)
+                this -> v[i][j] = MP.v[i][j];
+        }
+    }
     ~Matrice_Patratica() {
-        for(int i = 0; i < d; i++)
+        for (int i = 0; i < dim; i++) {
             delete[] v[i];
-        delete v;
+        }
+    }
+    void citire() override {
+        for (int i = 0; i < this -> dim; i++)
+            for (int j = 0; j < this -> dim; j++)
+                cin >> v[i][j];
+    }
+    void afisare() override {
+        for (int i = 0; i < this -> dim; i++) {
+            for (int j = 0; j < this -> dim; j++)
+                cout << this -> v[i][j];
+            cout << "\n";
+        }
     }
     friend istream& operator>>(istream &is, Matrice_Patratica &MP) {
-        cout << endl << "Introduceti elementele (partea reala si partea imaginara): " << endl;
-        for (int i = 0; i < MP.d; i++) {
-            for (int j = 0; j < MP.d; j++) {
-                Complex nr;
-                nr.citire();
-                MP.v[i][j] = nr.modul_complex();
-            }
-        }
+        MP.citire();
         return is;
     }
-        friend ostream &operator<<(ostream &os, const Matrice_Patratica &MP) {
-            for(int i = 0; i < MP.d; i++) {
-                for (int j = 0; j < MP.d; j++)
-                    os << MP.v[i][j] << " ";
-                os << endl;
-            }
-            return os;
-        }
-    void afisare() const{
-        cout << *this;
-    }
-    void citire() {
-        cin >> *this;
-    }
-    float suma_diagprinc() {
-        float suma = 0;
-        for(int i = 0; i < d; i++)
-            for(int j = 0; j < d; j++)
-                if(i == j) suma += v[i][j];
-        return suma;
-    }
-};
-//Clasa Matrice_Oarecare
-class Matrice_Oarecare:public Matrice{
-    int l, c;
-public:
-   explicit Matrice_Oarecare(int l = 0, int c = 0):Matrice(l,c) {this -> l = l; this -> c = c;}
-    ~Matrice_Oarecare() {
-        for(int i = 0; i < l; i++)
-            delete[] v[i];
-        delete[] v;
-    }
-    friend ostream& operator<<(ostream &os, Matrice_Oarecare &M) {
-        for (int i = 0; i < M.l; i++) {
-            for (int j = 0; j < M.c; j++)
-                os << M.v[i][j] << " ";
-            os << "\n";
-        }
+    friend ostream &operator<<(ostream &os, Matrice_Patratica &MP) {
+        MP.afisare();
         return os;
     }
-    friend istream& operator>>(istream &is, Matrice_Oarecare &M) {
-        cout <<endl<<"Introduceti elementele (partea reala si partea imaginara): "<<endl;
-        for(int i = 0; i < M.l; i++)
-            for(int j = 0; j < M.c; j++)
-            {
-                Complex nr;
-                cin >> nr;
-                M.v[i][j] = nr.modul_complex();
-            }
-        return is;
+    Complex getElement(int i, int j) {
+        if(i > this -> dim || j > this -> dim)
+            throw "Depaseste limita boss";
+        else
+            return v[i][j];
     }
-    void citire() {
-        cin >> *this;
+    Matrice_Patratica& operator=(const Matrice_Patratica &MP) {
+        if(this -> dim != 0) {
+            for (int i = 0; i < this -> dim; i++)
+                delete[] this -> v[i];
+            delete[] this -> v;
+        }
+        this -> dim = MP.dim;
+        this -> v = new Complex*[MP.dim];
+        for (int i = 0; i <  MP.dim; i++) {
+            this -> v[i] = new Complex[MP.dim];
+        }
+        for (int i = 0; i < MP.dim; i++) {
+            for (int j = 0; j < MP.dim; j++)
+                this -> v[i][j] = MP.v[i][j];
+        }
     }
-    void afisare() {
-        cout << *this;
+    int operator==(const Matrice_Patratica &MP)  {
+        if (this -> dim != MP.dim) {
+            cout << "Nu sunt egale! \n";
+            return 0;
+        }
+        for (int i = 0; i < MP.dim; i++) {
+            for (int j = 0; j < MP.dim; j++)
+                if (this -> v[i][j] != MP.v[i][j]) {
+                    cout << "Nu sunt egale! \n";
+                    return 0;
+                }
+        }
+        cout << "Sunt egale! \n";
+        return 1;
     }
-    float getElement(int i, int j) {
-        return v[i][j];
-    }
-    void setElem(int i, int j, float valoare) {
-        v[i][j] = valoare;
-    }
+
 };
+
 int main() {
+//    Matrice_Patratica MP1(1);
+//    MP1.citire();
+//    MP1.afisare();
+//
+//    Matrice_Patratica MP2(MP1);
+//    MP2.afisare();
+//
+//    Matrice_Patratica MP3(1);
+//    MP3.citire();
+//
+//    MP2 = MP3;
+//    cout << MP3;
+//
+//    MP1 == MP3;
+//    Matrice_Oarecare MO1(1, 2);
+//    MO1.citire();
+//    MO1.afisare();
+//
+//    Matrice_Oarecare MO2(MO1);
+//    MO2.afisare();
+
+//    Matrice_Oarecare MO3(2, 2);
+//    cout << MO3;
+//
+//    cout << endl;
+//    MO3 = MO1;
+//    MO3.afisare();
+//    vector< shared_ptr <Matrice>> Matrix;
+//    Matrix.push_back(make_shared<Matrice_Oarecare>(MO3));
+//    cout << Matrix[0].get();
+//    Matrice_Patratica MP(1);
+//    MP.citire();
+//    cout << MP;
+//    try {
+//        MP.getElement(2, 3);
+//    }
+//    catch (const char *txtEception) {
+//        cout << "Exception: " << txtEception << endl;
+//    }
+    return 0;
 }
